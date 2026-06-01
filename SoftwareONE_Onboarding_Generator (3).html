@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoftwareONE — Onboarding Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0a0a0a;--white:#ffffff;--off:#f7f7f5;
+  --sw-red:#e8112d;--sw-cyan:#00b4d8;
+  --purple:#5b4fcf;--purple-l:#ece9ff;
+  --green:#00b86e;--green-l:#e0faf0;
+  --amber:#f4a118;--amber-l:#fff3e0;
+  --blue:#1a7cdc;--blue-l:#e4f1ff;
+  --red:#e63946;--red-l:#fff0f0;
+  --muted:#888;--border:#e5e5e3;
+  --panel:#f0f0ee;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--off);color:var(--black)}
+
+/* ── LAYOUT ── */
+#app{display:grid;grid-template-columns:480px 1fr;height:100vh;overflow:hidden}
+#builder{overflow-y:auto;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column}
+#preview-wrap{overflow-y:auto;background:#1a1a1a;padding:32px}
+
+/* ── BUILDER HEADER ── */
+.builder-header{padding:24px 28px 20px;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0;z-index:10}
+.builder-header h1{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px}
+.builder-header h1 span{color:var(--sw-red)}
+.builder-header p{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* ── TABS ── */
+.tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--border);gap:0;background:#fff}
+.tab{padding:10px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab.active{color:var(--black);border-bottom-color:var(--sw-red)}
+.tab:hover:not(.active){color:var(--black)}
+
+/* ── SECTIONS ── */
+.section{display:none;padding:24px 28px;flex-direction:column;gap:16px}
+.section.active{display:flex}
+
+/* ── FORM ELEMENTS ── */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.field input,.field select,.field textarea{
+  border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--black);background:#fff;
+  transition:border-color .2s;outline:none;width:100%
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--purple)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+.section-label{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--black);border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:4px}
+
+/* ── SERVICE TOGGLES ── */
+.service-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.service-toggle{border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;user-select:none}
+.service-toggle:hover{border-color:var(--purple)}
+.service-toggle.on{border-color:var(--purple);background:var(--purple-l);color:var(--purple)}
+.service-toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s;flex-shrink:0}
+.service-toggle.on .dot{background:var(--purple)}
+
+/* ── CONTACT ROWS ── */
+.contact-row{display:grid;grid-template-columns:1fr 1fr 120px 32px;gap:8px;align-items:end}
+.contact-row input{font-size:13px}
+.btn-remove{background:none;border:1px solid var(--border);border-radius:6px;width:32px;height:36px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.btn-remove:hover{border-color:var(--red);color:var(--red);background:var(--red-l)}
+.btn-add{display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--purple);background:var(--purple-l);border:none;border-radius:8px;padding:7px 14px;cursor:pointer;transition:all .2s}
+.btn-add:hover{background:#d8d1ff}
+
+/* ── TEAM PERSON ── */
+.person-block{border:1.5px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;position:relative}
+.person-block .remove-person{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px}
+.person-block .remove-person:hover{color:var(--red)}
+.person-header{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ── ACTION BUTTONS ── */
+.actions{padding:20px 28px;border-top:1px solid var(--border);background:#fff;display:flex;gap:10px;sticky;bottom:0}
+.btn-primary{flex:1;background:var(--black);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+.btn-primary:hover{background:#222}
+.btn-secondary{background:var(--off);color:var(--black);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{background:var(--border)}
+
+/* ── PREVIEW ── */
+#preview-frame{width:100%;min-height:600px;border:none;border-radius:12px;background:#fff}
+
+.preview-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.preview-controls h2{font-family:'Sora',sans-serif;font-size:14px;font-weight:600;color:rgba(255,255,255,.7)}
+.preview-actions{display:flex;gap:10px}
+.btn-download{display:inline-flex;align-items:center;gap:7px;background:var(--sw-red);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.04em;transition:background .2s}
+.btn-download:hover{background:#c00f27}
+.btn-pdf{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:9px 18px;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.04em;transition:all .2s}
+.btn-pdf:hover{background:rgba(255,255,255,.2)}
+
+select option{background:#fff}
+
+/* toggle for optional fields */
+.optional-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;margin-top:-4px}
+.optional-toggle input[type=checkbox]{width:14px;height:14px;accent-color:var(--purple)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════════════════════════════════
+     BUILDER PANEL
+══════════════════════════════════════ -->
+<div id="builder">
+  <div class="builder-header">
+    <h1>software<span>ONE</span> Onboarding Generator</h1>
+    <p>Fill in customer details → live preview updates → download HTML or PDF</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('customer')">Customer</div>
+    <div class="tab" onclick="switchTab('team')">SWO Team</div>
+    <div class="tab" onclick="switchTab('services')">Services</div>
+    <div class="tab" onclick="switchTab('coverage')">Coverage</div>
+    <div class="tab" onclick="switchTab('contacts')">Contacts</div>
+  </div>
+
+  <!-- TAB 1: CUSTOMER -->
+  <div class="section active" id="tab-customer">
+    <div class="section-label">Customer Details</div>
+    <div class="field">
+      <label>Customer Name *</label>
+      <input type="text" id="f-custname" placeholder="e.g. Adecco Group" oninput="update()">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Prepared By</label>
+        <input type="text" id="f-prepby" placeholder="Your name" oninput="update()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Customer Logo <span style="font-weight:400;text-transform:none">(upload — embedded permanently in HTML)</span></label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="cust-logo-prev" style="width:48px;height:48px;border-radius:8px;border:2px solid var(--border);background:var(--off);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">🏢</div>
+        <div>
+          <input type="file" id="cust-logo-file" accept="image/*" style="display:none" onchange="loadCustLogo(this)">
+          <button onclick="document.getElementById('cust-logo-file').click()" style="font-size:12px;font-weight:600;color:var(--purple);background:var(--purple-l);border:none;border-radius:7px;padding:6px 14px;cursor:pointer">Upload Logo</button>
+          <button id="cust-logo-rm" onclick="custLogoB64='';document.getElementById('cust-logo-prev').innerHTML='🏢';this.style.display='none';update()" style="display:none;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;margin-left:6px">Remove</button>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:3px">Stays in this file — no re-upload needed</div>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Customer Logo URL <span style="font-weight:400;text-transform:none">(or paste URL instead)</span></label>
+      <input type="text" id="f-logo" placeholder="https://..." oninput="update()">
+    </div>
+    <div class="field">
+      <label>Customer Primary Colour <span style="font-weight:400;text-transform:none">(for co-branding)</span></label>
+      <input type="color" id="f-custcolor" value="#e8112d" oninput="update()" style="height:40px;cursor:pointer">
+    </div>
+    <div class="section-label" style="margin-top:8px">Scope Notes</div>
+    <div class="field">
+      <label>In-Scope Services / Notes</label>
+      <textarea id="f-scope" placeholder="e.g. M365, D365, Entra – All break-fix support included. Azure – support across selective subscriptions." oninput="update()"></textarea>
+    </div>
+    <div class="field">
+      <label>Out of Scope</label>
+      <textarea id="f-outscope" placeholder="e.g. On-Prem – Out of Scope" rows="2" oninput="update()"></textarea>
+    </div>
+  </div>
+
+  <!-- TAB 2: SWO TEAM -->
+  <div class="section" id="tab-team">
+    <div class="section-label">SoftwareONE Account Team</div>
+    <div id="team-list"></div>
+    <button class="btn-add" onclick="addPerson()">+ Add Team Member</button>
+  </div>
+
+  <!-- TAB 3: SERVICES -->
+  <div class="section" id="tab-services">
+    <div class="section-label">Service Type</div>
+    <div class="service-grid" id="service-grid">
+      <div class="service-toggle on" data-svc="iss" onclick="toggleSvc(this)"><div class="dot"></div>Integrated Support (ISS)</div>
+      <div class="service-toggle" data-svc="azure" onclick="toggleSvc(this)"><div class="dot"></div>Azure Managed</div>
+      <div class="service-toggle" data-svc="csp" onclick="toggleSvc(this)"><div class="dot"></div>Microsoft CSP</div>
+      <div class="service-toggle" data-svc="m365" onclick="toggleSvc(this)"><div class="dot"></div>Microsoft 365</div>
+      <div class="service-toggle" data-svc="aws" onclick="toggleSvc(this)"><div class="dot"></div>AWS Managed</div>
+      <div class="service-toggle" data-svc="d365" onclick="toggleSvc(this)"><div class="dot"></div>Dynamics 365</div>
+      <div class="service-toggle" data-svc="backup" onclick="toggleSvc(this)"><div class="dot"></div>Backup & Recovery</div>
+      <div class="service-toggle" data-svc="ai" onclick="toggleSvc(this)"><div class="dot"></div>AI Central</div>
+    </div>
+    <div class="section-label" style="margin-top:8px">ISS Professional Services Hours</div>
+    <label class="optional-toggle"><input type="checkbox" id="f-ps-on" checked onchange="update()"> Include Professional Services hours</label>
+    <div class="field-row" id="ps-row">
+      <div class="field">
+        <label>Hours</label>
+        <input type="number" id="f-ps-hours" value="120" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Region / Note</label>
+        <input type="text" id="f-ps-region" placeholder="e.g. EMEA, CEE, yearly" oninput="update()">
+      </div>
+    </div>
+    <div class="section-label" style="margin-top:8px">SLA Variant</div>
+    <div class="field">
+      <label>P4 Initial Response Time</label>
+      <select id="f-p4" onchange="update()">
+        <option value="24 hours">24 hours (standard)</option>
+        <option value="12 hours">12 hours (enhanced)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- TAB 4: COVERAGE -->
+  <div class="section" id="tab-coverage">
+    <div class="section-label">Service Coverage</div>
+    <div class="field">
+      <label>Coverage Hours</label>
+      <select id="f-coverage" onchange="update()">
+        <option value="24 x 7 x 365">24 x 7 x 365 (standard)</option>
+        <option value="24 x 7">24 x 7</option>
+        <option value="Business Hours (Mon–Fri 08:00–18:00)">Business Hours only</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Service Support Hours</label>
+      <select id="f-sshours" onchange="update()">
+        <option value="Unlimited">Unlimited</option>
+        <option value="Pre-paid bundle">Pre-paid bundle</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Business Review Frequency</label>
+      <select id="f-brfreq" onchange="update()">
+        <option value="Monthly">Monthly</option>
+        <option value="Quarterly">Quarterly</option>
+        <option value="Agreed with Customer">Agreed with Customer</option>
+      </select>
+    </div>
+    <div class="section-label" style="margin-top:8px">Escalation SDM</div>
+    <div class="field">
+      <label>SDM Email (for escalation slide)</label>
+      <input type="email" id="f-sdm-email" placeholder="sdm@softwareone.com" oninput="update()">
+    </div>
+    <div class="section-label" style="margin-top:8px">Phone Region to Highlight</div>
+    <div class="field">
+      <label>Which countries to show prominently?</label>
+      <input type="text" id="f-phone-regions" placeholder="e.g. United Kingdom, Germany, Italy" oninput="update()">
+    </div>
+  </div>
+
+  <!-- TAB 5: CONTACTS -->
+  <div class="section" id="tab-contacts">
+    <div class="section-label">Authorised Customer Contacts</div>
+    <p style="font-size:12px;color:var(--muted);line-height:1.5">Add the customer's authorised contacts. They will appear in a searchable table in the output.</p>
+    <div id="contacts-list"></div>
+    <button class="btn-add" onclick="addContact()">+ Add Contact</button>
+    <div style="margin-top:8px">
+      <label class="optional-toggle"><input type="checkbox" id="f-contacts-tba" onchange="update()"> Mark contacts as "To Be Added" (if list not finalised)</label>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="downloadHTML()">⬇ Download HTML</button>
+    <button class="btn-secondary" onclick="triggerPDF()">PDF</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PREVIEW PANEL
+══════════════════════════════════════ -->
+<div id="preview-wrap">
+  <div class="preview-controls">
+    <h2>Live Preview</h2>
+    <div class="preview-actions">
+      <button class="btn-pdf" onclick="triggerPDF()">⬇ Export PDF</button>
+      <button class="btn-download" onclick="downloadHTML()">⬇ Download HTML</button>
+    </div>
+  </div>
+  <iframe id="preview-frame" srcdoc=""></iframe>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let teamMembers = [
+  {name:'',role:'Service Delivery Manager',email:'',phone:'',desc:'Primary contact for service delivery, day-to-day management, and escalation handling.',photo:''},
+];
+let custLogoB64 = '';
+let contacts = [];
+let services = new Set(['iss']);
+
+// ═══════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${id}')"]`).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ═══════════════════════════════════════
+// SERVICES
+// ═══════════════════════════════════════
+function toggleSvc(el){
+  const svc = el.dataset.svc;
+  if(services.has(svc)){services.delete(svc);el.classList.remove('on');}
+  else{services.add(svc);el.classList.add('on');}
+  el.querySelector('.dot').style.background = services.has(svc)?'var(--purple)':'var(--border)';
+  update();
+}
+
+// ═══════════════════════════════════════
+// TEAM
+// ═══════════════════════════════════════
+const ROLES = ['Onboarding Manager','Service Delivery Manager','Customer Success Manager','Account Manager','Account Director','Microsoft Solutions Specialist','PreSales Consultant','Service Delivery Manager – OBH Support'];
+
+function renderTeam(){
+  const c = document.getElementById('team-list');
+  c.innerHTML = '';
+  teamMembers.forEach((p,i)=>{
+    const d = document.createElement('div');
+    d.className = 'person-block';
+    const initials = p.name ? p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '👤';
+    const avatarHtml = p.photo
+      ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : initials;
+    d.innerHTML = `
+      <button class="remove-person" onclick="removePerson(${i})">✕</button>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div id="pp-${i}" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--border);background:var(--off);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--purple);overflow:hidden;flex-shrink:0">${avatarHtml}</div>
+        <div>
+          <input type="file" id="pf-${i}" accept="image/*" style="display:none" onchange="loadPersonPhoto(${i},this)">
+          <button onclick="document.getElementById('pf-${i}').click()" style="font-size:11px;font-weight:600;color:var(--purple);background:var(--purple-l);border:none;border-radius:7px;padding:5px 12px;cursor:pointer">Upload Photo</button>
+          ${p.photo?`<button onclick="teamMembers[${i}].photo='';renderTeam();update()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;margin-left:6px">Remove</button>`:''}
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Embedded in HTML permanently</div>
+        </div>
+      </div>
+      <div class="person-header">
+        <div class="field"><label>Full Name</label><input type="text" value="${p.name}" placeholder="Jane Smith" oninput="teamMembers[${i}].name=this.value;refreshAvatar(${i});update()"></div>
+        <div class="field"><label>Role</label>
+          <select onchange="teamMembers[${i}].role=this.value;update()">
+            ${ROLES.map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}
+            <option value="custom_${i}" ${!ROLES.includes(p.role)?'selected':''}>Custom...</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Email</label><input type="email" value="${p.email}" placeholder="name@softwareone.com" oninput="teamMembers[${i}].email=this.value;update()"></div>
+        <div class="field"><label>Phone (optional)</label><input type="text" value="${p.phone}" placeholder="+44 ..." oninput="teamMembers[${i}].phone=this.value;update()"></div>
+      </div>
+      <div class="field"><label>Description (optional)</label><textarea rows="2" oninput="teamMembers[${i}].desc=this.value;update()">${p.desc}</textarea></div>`;
+    c.appendChild(d);
+  });
+}
+function refreshAvatar(i){
+  const p=teamMembers[i]; if(p.photo)return;
+  const el=document.getElementById(`pp-${i}`); if(!el)return;
+  el.innerHTML=p.name?p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase():'👤';
+}
+function loadPersonPhoto(i,inp){
+  const file=inp.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    teamMembers[i].photo=e.target.result;
+    renderTeam(); update();
+  };
+  r.readAsDataURL(file);
+}
+function addPerson(){
+  teamMembers.push({name:'',role:'Service Delivery Manager',email:'',phone:'',desc:'',photo:''});
+  renderTeam(); update();
+}
+function removePerson(i){teamMembers.splice(i,1);renderTeam();update();}
+
+function loadCustLogo(inp){
+  const file=inp.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    custLogoB64=e.target.result;
+    const prev=document.getElementById('cust-logo-prev');
+    prev.innerHTML=`<img src="${custLogoB64}" style="width:100%;height:100%;object-fit:contain;padding:4px">`;
+    const rm=document.getElementById('cust-logo-rm');
+    if(rm)rm.style.display='inline';
+    update();
+  };
+  r.readAsDataURL(file);
+}
+
+
+// ═══════════════════════════════════════
+// CONTACTS
+// ═══════════════════════════════════════
+const CTYPES = ['IT Administrator','IT Support','Billing Admin','Contract Owner','Ticket Admin','Ticket User'];
+
+function renderContacts(){
+  const c = document.getElementById('contacts-list');
+  c.innerHTML='';
+  if(!contacts.length){c.innerHTML='<p style="font-size:12px;color:var(--muted);padding:8px 0">No contacts added yet.</p>';return;}
+  contacts.forEach((ct,i)=>{
+    const r = document.createElement('div');
+    r.className='contact-row';
+    r.innerHTML=`
+      <div class="field"><label>${i===0?'Name':''}</label><input type="text" value="${ct.name}" placeholder="Full Name" oninput="contacts[${i}].name=this.value;update()"></div>
+      <div class="field"><label>${i===0?'Email':''}</label><input type="email" value="${ct.email}" placeholder="email@company.com" oninput="contacts[${i}].email=this.value;update()"></div>
+      <div class="field"><label>${i===0?'Type':''}</label>
+        <select onchange="contacts[${i}].type=this.value;update()">
+          ${CTYPES.map(t=>`<option ${t===ct.type?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>${i===0?'&nbsp;':''}</label><button class="btn-remove" onclick="contacts.splice(${i},1);renderContacts();update()">✕</button></div>`;
+    c.appendChild(r);
+  });
+}
+function addContact(){
+  contacts.push({name:'',email:'',type:'IT Administrator'});
+  renderContacts(); update();
+}
+
+// ═══════════════════════════════════════
+// GLOBAL PHONE NUMBERS
+// ═══════════════════════════════════════
+const PHONES = {
+  'Argentina':'+54 800 800 1636','Australia':'+61 180 086 1160','Austria':'+43 720 778 174',
+  'Belgium':'+32 258 004 32','Brazil':'+55 21 4063 7288','Canada':'+1 888 890 9071',
+  'Chile':'+56 233 224 353','China':'+864001200463','Colombia':'+018009495046',
+  'Czech Republic':'+420 800 023 801','Finland':'+358 800 916 176','France':'+33 184 028 108',
+  'Germany':'+49 894 120 7110','Hong Kong':'+85 280 096 9431','India':'+0008000404496',
+  'Indonesia':'+00180349243717017','Ireland':'+353 180 022 8855','Italy':'800124520',
+  'Japan':'00531490095','Korea':'003084910239','Malaysia':'1800815002',
+  'Mexico':'+52 556 636 5678','Netherlands':'+31 205 816 924','New Zealand':'0800 450 501',
+  'Norway':'+47 800 104 03','Poland':'+48 008004912057','Romania':'+40 800 890 004',
+  'Singapore':'+65 8004922556','South Africa':'+27800983653','Spain':'+34 910 601 733',
+  'Sweden':'+46 200 123 768','Switzerland':'+41 435 051 447','Thailand':'+66 180 001 4149',
+  'UAE':'+971 800049055','United Kingdom':'+44 208 089 2805','United States':'+1 262 439 7854',
+  'Ukraine':'0800504323'
+};
+
+function getPhoneRows(highlight){
+  const hi = (highlight||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  return Object.entries(PHONES).map(([c,n])=>{
+    const hl = hi.some(h=>c.toLowerCase().includes(h));
+    return `<tr style="${hl?'background:#fffbe6;font-weight:600':''}"><td>${c}</td><td>${n}</td></tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// READ FIELDS
+// ═══════════════════════════════════════
+function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
+function chk(id){const el=document.getElementById(id);return el?el.checked:false;}
+
+// ═══════════════════════════════════════
+// BUILD OUTPUT HTML
+// ═══════════════════════════════════════
+function buildHTML(forDownload=false){
+  const custName = v('f-custname')||'[Customer Name]';
+  const date = v('f-date') ? new Date(v('f-date')).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const prepBy = v('f-prepby')||'SoftwareONE';
+  const logo = custLogoB64 || v('f-logo');
+  const custColor = v('f-custcolor')||'#e8112d';
+  const scope = v('f-scope');
+  const outscope = v('f-outscope');
+  const coverage = v('f-coverage')||'24 x 7 x 365';
+  const sshours = v('f-sshours')||'Unlimited';
+  const brfreq = v('f-brfreq')||'Monthly';
+  const sdmEmail = v('f-sdm-email');
+  const phoneRegions = v('f-phone-regions');
+  const psOn = chk('f-ps-on');
+  const psHours = v('f-ps-hours');
+  const psRegion = v('f-ps-region');
+  const p4time = v('f-p4')||'24 hours';
+  const contactsTba = chk('f-contacts-tba');
+
+  const svcLabels = {iss:'Integrated Support Services',azure:'Azure Managed Services',csp:'Microsoft CSP Services',m365:'Microsoft 365',aws:'AWS Managed Services',d365:'Dynamics 365',backup:'Backup & Recovery',ai:'AI Central'};
+  const activeServices = [...services].map(s=>svcLabels[s]).filter(Boolean);
+
+  // team HTML
+  const teamCards = teamMembers.filter(p=>p.name||p.role).map(p=>{
+    const initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'SW';
+    const avatarHtml = p.photo
+      ? `<img src="${p.photo}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0">`
+      : `<div class="card-avatar">${initials}</div>`;
+    return `
+    <div class="contact-card">
+      ${avatarHtml}
+      <div class="card-info">
+        <div class="card-name">${p.name||'TBD'}</div>
+        <div class="card-role">${p.role}</div>
+        ${p.desc?`<div class="card-desc">${p.desc}</div>`:''}
+        <div class="card-links">
+          ${p.email?`<a href="mailto:${p.email}" class="card-link">✉ ${p.email}</a>`:''}
+          ${p.phone?`<a href="tel:${p.phone}" class="card-link">📞 ${p.phone}</a>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // contacts table
+  let contactsBody = '';
+  if(contactsTba){
+    contactsBody = `<tr><td colspan="3" style="text-align:center;color:#888;padding:24px;font-style:italic">Authorised contacts to be confirmed — please contact your Service Delivery Manager.</td></tr>`;
+  } else if(!contacts.length){
+    contactsBody = `<tr><td colspan="3" style="text-align:center;color:#888;padding:24px;font-style:italic">No contacts added yet.</td></tr>`;
+  } else {
+    contactsBody = contacts.map(c=>`<tr><td>${c.name}</td><td>${c.email}</td><td><span class="badge">${c.type}</span></td></tr>`).join('');
+  }
+
+  const phoneRows = getPhoneRows(phoneRegions);
+
+  // scope list
+  const scopeItems = scope ? scope.split('\n').filter(Boolean).map(l=>`<li>${l}</li>`).join('') : '<li>As per your service contract</li>';
+  const outscopeItems = outscope ? outscope.split('\n').filter(Boolean).map(l=>`<li>${l}</li>`).join('') : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SoftwareONE Support Guide — ${custName}</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0a0a0a;--white:#fff;--off:#f7f7f5;
+  --sw-red:#e8112d;--cust:${custColor};
+  --muted:#777;--border:#e5e5e3;--card-bg:#fff;
+  --purple:#5b4fcf;--green:#00b86e;--amber:#f4a118;--blue:#1a7cdc;--red:#e63946;
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--off);color:var(--black);font-size:15px;line-height:1.6}
+
+/* NAV */
+#nav{position:sticky;top:0;z-index:100;background:var(--black);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:54px;box-shadow:0 2px 16px rgba(0,0,0,.3)}
+.nav-logo{display:flex;align-items:center;gap:12px}
+.nav-logo svg{width:110px;height:auto}
+.nav-logo .cust-name{font-family:'Sora',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);border-left:1px solid rgba(255,255,255,.2);padding-left:12px;margin-left:4px}
+.nav-links{display:flex;gap:2px}
+.nav-link{color:rgba(255,255,255,.55);font-size:12px;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .2s;cursor:pointer}
+.nav-link:hover,.nav-link.active{color:#fff;background:rgba(255,255,255,.1)}
+.nav-date{font-size:11px;color:rgba(255,255,255,.35)}
+
+/* HERO */
+#hero{background:var(--black);padding:70px 0 60px;position:relative;overflow:hidden}
+.hero-glow{position:absolute;right:-100px;top:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(232,17,45,.25) 0%,transparent 70%);pointer-events:none}
+.hero-glow2{position:absolute;left:-80px;bottom:-80px;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle,rgba(91,79,207,.2) 0%,transparent 70%);pointer-events:none}
+.hero-inner{max-width:1100px;margin:0 auto;padding:0 40px;position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:40px}
+.hero-left h1{font-family:'Sora',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:800;color:#fff;line-height:1.05;margin-bottom:12px}
+.hero-left h1 span{color:var(--sw-red)}
+.hero-left p{font-size:16px;color:rgba(255,255,255,.55);margin-bottom:28px;max-width:480px}
+.hero-pills{display:flex;flex-wrap:wrap;gap:8px}
+.hero-pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:6px 16px;font-size:12px;font-weight:500;color:rgba(255,255,255,.7)}
+.hero-pill.red{border-color:rgba(232,17,45,.4);background:rgba(232,17,45,.12);color:#ff6b7a}
+.hero-logo-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px 32px;display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0}
+.hero-logo-box .cust-logo img{max-height:48px;max-width:160px;filter:brightness(0) invert(1)}
+.hero-logo-box .x{font-size:18px;color:rgba(255,255,255,.3)}
+.hero-logo-box .sw-logo{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#fff}
+.hero-logo-box .sw-logo span{font-weight:300}
+
+/* MAIN */
+main{max-width:1100px;margin:0 auto;padding:0 40px 80px}
+
+/* SECTIONS */
+.section{padding:52px 0 0}
+.section-header{margin-bottom:28px}
+.section-header .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--sw-red);margin-bottom:6px}
+.section-header h2{font-family:'Sora',sans-serif;font-size:28px;font-weight:700;color:var(--black)}
+.section-header p{font-size:14px;color:var(--muted);margin-top:6px}
+
+/* CARDS GRID */
+.cards{display:grid;gap:16px}
+.cards-3{grid-template-columns:repeat(3,1fr)}
+.cards-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:800px){.cards-3,.cards-2{grid-template-columns:1fr}}
+
+/* HOW TO RAISE — channel cards */
+.channel-card{background:var(--card-bg);border:1.5px solid var(--border);border-radius:16px;padding:24px;transition:box-shadow .2s;position:relative;overflow:hidden}
+.channel-card:hover{box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.channel-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.channel-card.email::before{background:var(--purple)}
+.channel-card.portal::before{background:var(--green)}
+.channel-card.phone::before{background:var(--blue)}
+.channel-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+.ci-purple{background:#ece9ff}
+.ci-green{background:#e0faf0}
+.ci-blue{background:#e4f1ff}
+.channel-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.channel-title{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px}
+.channel-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.channel-note{background:var(--off);border-radius:8px;padding:10px 14px;font-size:12px;color:#555;line-height:1.55;margin-bottom:14px}
+.channel-note strong{color:var(--black)}
+.channel-btn{display:block;text-align:center;background:var(--purple);color:#fff;text-decoration:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;transition:all .2s}
+.channel-btn:hover{opacity:.88;transform:translateY(-1px)}
+.channel-btn.gb{background:var(--green)}
+.channel-btn.bb{background:var(--blue)}
+
+/* P1 ALERT */
+.p1-alert{background:#fff5f5;border:1.5px solid #ffd6d6;border-radius:14px;padding:20px 24px;display:flex;gap:14px;margin-top:20px}
+.p1-icon{font-size:24px;flex-shrink:0}
+.p1-text h4{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:#b00020;margin-bottom:4px}
+.p1-text p{font-size:13px;color:#7a3030;line-height:1.6}
+.dial-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.dial-chip{background:#fff;border:1px solid #ffc0c0;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:#b00020;text-decoration:none;transition:background .15s}
+.dial-chip:hover{background:#ffe8e8}
+
+/* COVERAGE TABLE */
+.cov-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:700px){.cov-stats{grid-template-columns:repeat(2,1fr)}}
+.cov-stat{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+.cov-stat-val{font-family:'Sora',sans-serif;font-size:24px;font-weight:700;color:var(--purple)}
+.cov-stat-lbl{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* SLA TABLE */
+.sla-wrap{overflow-x:auto}
+table.sla{width:100%;border-collapse:collapse;background:var(--card-bg);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+table.sla th{background:var(--black);color:#fff;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:10px 16px;text-align:left}
+table.sla td{padding:11px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:top}
+table.sla tr:last-child td{border-bottom:none}
+table.sla tr:nth-child(even) td{background:#fafaf8}
+.badge-p1{background:#ffe5e5;color:#b00020;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.badge-p2{background:#fff3e0;color:#914500;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.badge-p3{background:#fffde0;color:#7a5f00;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.badge-p4{background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.badge-s1{background:#ffe5e5;color:#b00020;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.badge-s2{background:#fff3e0;color:#914500;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.badge-s3{background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.resp{font-family:'Sora',sans-serif;font-weight:700;color:var(--purple)}
+
+/* CONTACT CARDS */
+.contact-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;gap:16px;align-items:flex-start}
+.card-avatar{width:52px;height:52px;border-radius:50%;background:var(--off);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--purple);flex-shrink:0}
+.card-name{font-family:'Sora',sans-serif;font-size:16px;font-weight:700}
+.card-role{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--purple);margin-top:2px}
+.card-desc{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.55}
+.card-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.card-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--blue);text-decoration:none;background:#f0f7ff;border-radius:7px;padding:5px 12px;border:1px solid rgba(26,124,220,.15);transition:background .2s}
+.card-link:hover{background:#daeeff}
+
+/* AUTHORISED CONTACTS TABLE */
+.contacts-search{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 14px;font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:12px;outline:none;transition:border-color .2s}
+.contacts-search:focus{border-color:var(--purple)}
+.badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:#ece9ff;color:var(--purple)}
+
+/* ESCALATION */
+.esc-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:800px){.esc-steps{grid-template-columns:1fr}}
+.esc-step{border:1px solid var(--border);border-radius:14px;padding:22px;position:relative;overflow:hidden}
+.esc-step::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.esc-step:nth-child(1)::before{background:var(--purple)}
+.esc-step:nth-child(2)::before{background:var(--green)}
+.esc-step:nth-child(3)::before{background:var(--amber)}
+.esc-num{font-family:'Sora',sans-serif;font-size:32px;font-weight:800;color:var(--off);margin-bottom:10px}
+.esc-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px}
+.esc-body{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.esc-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;text-decoration:none;border-radius:8px;padding:6px 14px;transition:all .2s}
+.esc-l-purple{color:var(--purple);background:#ece9ff}
+.esc-l-purple:hover{background:#d8d1ff}
+.esc-l-green{color:#007a4a;background:#e0faf0}
+.esc-l-green:hover{background:#c0f0dc}
+.esc-l-amber{color:#a06000;background:#fff3e0}
+.esc-l-amber:hover{background:#ffe0b0}
+
+/* EMAIL TEMPLATE */
+.email-template{background:var(--card-bg);border:1.5px solid var(--border);border-radius:14px;overflow:hidden}
+.et-header{background:var(--black);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+.et-header span{font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.7)}
+.et-btn{background:var(--sw-red);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.et-body{padding:20px;font-size:13px;line-height:1.7;color:#444}
+.et-field{margin-bottom:6px;display:flex;gap:8px}
+.et-label{font-weight:600;color:var(--black);min-width:140px;flex-shrink:0}
+.et-val{color:var(--muted)}
+
+/* PHONE TABLE */
+.phone-table-wrap{max-height:350px;overflow-y:auto;border:1px solid var(--border);border-radius:10px}
+table.phone-tbl{width:100%;border-collapse:collapse}
+table.phone-tbl th{background:var(--black);color:#fff;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;text-align:left;position:sticky;top:0}
+table.phone-tbl td{padding:8px 16px;font-size:13px;border-bottom:1px solid var(--border)}
+table.phone-tbl tr:last-child td{border:none}
+
+/* PORTAL SECTION */
+.portal-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.portal-steps{grid-template-columns:1fr}}
+.portal-step{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:20px}
+.ps-num{font-family:'Sora',sans-serif;font-size:36px;font-weight:800;color:var(--off);margin-bottom:8px}
+.ps-title{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px}
+.ps-desc{font-size:13px;color:var(--muted);line-height:1.55}
+
+/* SCOPE */
+.scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.scope-grid{grid-template-columns:1fr}}
+.scope-box{background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:20px}
+.scope-box h4{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px}
+.scope-box ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+.scope-box.in ul li::before{content:'✓  ';color:var(--green);font-weight:700}
+.scope-box.out ul li::before{content:'✕  ';color:var(--red);font-weight:700}
+.scope-box ul li{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* CTA FOOTER */
+.cta-strip{background:var(--black);border-radius:14px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:40px}
+.cta-strip h3{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:#fff}
+.cta-strip p{font-size:13px;color:rgba(255,255,255,.55);margin-top:2px}
+.cta-btns{display:flex;gap:10px;flex-wrap:wrap}
+.cta-btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:600;transition:all .2s}
+.cta-btn.primary{background:var(--sw-red);color:#fff}
+.cta-btn.primary:hover{background:#c00f27}
+.cta-btn.secondary{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.cta-btn.secondary:hover{background:rgba(255,255,255,.18)}
+
+/* FOOTER */
+footer{background:var(--black);color:rgba(255,255,255,.4);text-align:center;font-size:11px;padding:20px;margin-top:60px}
+footer span{color:rgba(255,255,255,.2);margin:0 8px}
+
+/* PRINT / PDF */
+@media print{
+  #nav{display:none!important}
+  .cta-strip{display:none}
+  body{background:#fff}
+  main{max-width:100%;padding:0 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">
+    <svg viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="30" cy="30" r="28" fill="white"/>
+      <text x="30" y="37" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="17" font-weight="900" fill="black">one</text>
+      <text x="65" y="25" font-family="Arial,sans-serif" font-size="11" fill="white" opacity=".6">software</text>
+      <text x="65" y="44" font-family="Arial Black,sans-serif" font-size="18" font-weight="900" fill="white">ONE</text>
+    </svg>
+    <div class="cust-name">${custName}</div>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="#how-to">How to Raise Tickets</a>
+    <a class="nav-link" href="#team">Our Team</a>
+    <a class="nav-link" href="#coverage">Coverage & SLAs</a>
+    <a class="nav-link" href="#contacts">Contacts</a>
+    <a class="nav-link" href="#escalation">Escalation</a>
+    <a class="nav-link" href="#portal">Portal</a>
+  </div>
+  <div class="nav-date">${date}</div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <h1>SoftwareONE<br><span>Support Guide</span></h1>
+      <p>Your complete reference for raising tickets, understanding SLAs, and getting the right help from your SoftwareONE team.</p>
+      <div class="hero-pills">
+        ${activeServices.map(s=>`<div class="hero-pill">${s}</div>`).join('')}
+        <div class="hero-pill red">24 × 7 Support</div>
+        <div class="hero-pill">${date}</div>
+      </div>
+    </div>
+    <div class="hero-logo-box">
+      ${logo?`<div class="cust-logo"><img src="${logo}" alt="${custName} logo" onerror="this.style.display='none'"></div><div class="x">×</div>`:''}
+      <div class="sw-logo"><span>software</span>ONE</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px">Prepared by ${prepBy}</div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<!-- HOW TO RAISE TICKETS -->
+<div class="section" id="how-to">
+  <div class="section-header">
+    <div class="eyebrow">01 — Getting Support</div>
+    <h2>How to Raise a Ticket</h2>
+    <p>Three channels available. Choose based on urgency — only authorised contacts can raise tickets.</p>
+  </div>
+  <div class="cards cards-3">
+    <div class="channel-card email">
+      <div class="channel-icon ci-purple">✉️</div>
+      <div class="channel-label">Channel 01</div>
+      <div class="channel-title">Email</div>
+      <div class="channel-desc">Send an email and a ticket is created automatically on your behalf.</div>
+      <div class="channel-note"><strong>support@softwareone.com</strong><br>Default priority: <strong>P4</strong>. To upgrade, contact your SDM or call us.</div>
+      <a href="mailto:support@softwareone.com?subject=Support%20Request%20%E2%80%94%20${encodeURIComponent(custName)}&body=Tenant%20ID%3A%20%0ASubscription%20ID%3A%20%0AResource%20ID%2FName%3A%20%0ADate%2FTime%20issue%20started%3A%20%0AUsers%20impacted%3A%20%0APriority%3A%20%5BP1%2FP2%2FP3%2FP4%5D%0AIssue%20summary%3A%20%0AError%20message%3A%20%0ATroubleshooting%20steps%20performed%3A%20" class="channel-btn">✉ Open Support Email</a>
+    </div>
+    <div class="channel-card portal">
+      <div class="channel-icon ci-green">🌐</div>
+      <div class="channel-label">Channel 02</div>
+      <div class="channel-title">Support Portal</div>
+      <div class="channel-desc">Log in with your work Microsoft account — SSO available. View, create and track all tickets.</div>
+      <div class="channel-note"><strong>portal.softwareone.cloud</strong><br>Raise incidents, service requests, and billing queries. Track all open tickets.</div>
+      <a href="https://portal.softwareone.cloud" target="_blank" class="channel-btn gb">🌐 Open Support Portal</a>
+    </div>
+    <div class="channel-card phone">
+      <div class="channel-icon ci-blue">📞</div>
+      <div class="channel-label">Channel 03</div>
+      <div class="channel-title">Phone</div>
+      <div class="channel-desc">Call to raise a ticket or give a heads-up on a P1. Use for any urgency level.</div>
+      <div class="channel-note">For <strong>P1 incidents</strong> — always call immediately after raising via portal or email. Also contact your SDM.<br><br>See global dial-in numbers below ↓</div>
+      <a href="#phone-numbers" class="channel-btn bb">📞 View Dial-In Numbers</a>
+    </div>
+  </div>
+
+  <div class="p1-alert">
+    <div class="p1-icon">🚨</div>
+    <div class="p1-text">
+      <h4>P1 Critical Incident? Act immediately.</h4>
+      <p>For complete service outages affecting core business operations — <strong>raise a ticket first</strong> (portal or email), then <strong>call us immediately</strong>, then <strong>notify your SDM</strong>. Do not wait for an email response.</p>
+      <div class="dial-chips">
+        <a href="tel:+442080892805" class="dial-chip">🇬🇧 UK: +44 208 089 2805</a>
+        <a href="tel:+12624397854" class="dial-chip">🇺🇸 US: +1 262 439 7854</a>
+        <a href="tel:+498941207110" class="dial-chip">🇩🇪 DE: +49 894 120 7110</a>
+        ${sdmEmail?`<a href="mailto:${sdmEmail}?subject=P1%20Incident%20Notification&body=Hi%2C%0A%0AWe%20have%20a%20P1%20incident.%20Ticket%3A%20%5BID%5D%0A%0ADescription%3A%20%5Bissue%5D%0A" class="dial-chip">📧 Email SDM</a>`:''}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCOPE -->
+${(scope||outscope)?`
+<div class="section" id="scope">
+  <div class="section-header">
+    <div class="eyebrow">02 — Service Scope</div>
+    <h2>What's In & Out of Scope</h2>
+  </div>
+  <div class="scope-grid">
+    ${scope?`<div class="scope-box in"><h4>✅ In Scope</h4><ul>${scopeItems}</ul></div>`:''}
+    ${outscope?`<div class="scope-box out"><h4>❌ Out of Scope</h4><ul>${outscopeItems}</ul></div>`:''}
+  </div>
+</div>`:''}
+
+<!-- YOUR TEAM -->
+<div class="section" id="team">
+  <div class="section-header">
+    <div class="eyebrow">03 — Your Account Team</div>
+    <h2>Your SoftwareONE Team</h2>
+    <p>Key contacts for support, escalations, and account management.</p>
+  </div>
+  <div class="cards cards-2">
+    ${teamCards||'<p style="color:var(--muted);font-size:13px">No team members added yet.</p>'}
+  </div>
+</div>
+
+<!-- COVERAGE & SLAs -->
+<div class="section" id="coverage">
+  <div class="section-header">
+    <div class="eyebrow">04 — Service Coverage</div>
+    <h2>Coverage & SLAs</h2>
+  </div>
+  <div class="cov-stats">
+    <div class="cov-stat"><div class="cov-stat-val">${coverage.includes('24 x 7')?'24/7':coverage}</div><div class="cov-stat-lbl">Coverage</div></div>
+    <div class="cov-stat"><div class="cov-stat-val">${sshours}</div><div class="cov-stat-lbl">Support Hours</div></div>
+    ${psOn&&psHours?`<div class="cov-stat"><div class="cov-stat-val">${psHours}h</div><div class="cov-stat-lbl">Pro Services${psRegion?' ('+psRegion+')':''}</div></div>`:''}
+    <div class="cov-stat"><div class="cov-stat-val">${brfreq}</div><div class="cov-stat-lbl">Business Reviews</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div>
+      <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">🔴 Incident Priorities</div>
+      <div class="sla-wrap">
+        <table class="sla">
+          <thead><tr><th>Priority</th><th>Scenario</th><th>Response</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge-p1">P1 Critical</span></td><td style="font-size:12px">Core service completely unavailable (email, finance, customer service)</td><td><span class="resp">15 min</span></td></tr>
+            <tr><td><span class="badge-p2">P2 High</span></td><td style="font-size:12px">Non-essential service unavailable (training, PM tools)</td><td><span class="resp">1 hour</span></td></tr>
+            <tr><td><span class="badge-p3">P3 Medium</span></td><td style="font-size:12px">System available but degraded performance</td><td><span class="resp">4 hours</span></td></tr>
+            <tr><td><span class="badge-p4">P4 Low</span></td><td style="font-size:12px">Non-production system issue (test/training env)</td><td><span class="resp">${p4time}</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">🔵 Service Request Priorities</div>
+      <div class="sla-wrap">
+        <table class="sla">
+          <thead><tr><th>Priority</th><th>Scenario</th><th>Response</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge-s1">S1 High</span></td><td style="font-size:12px">Critical request — risk to ops or VIP user</td><td><span class="resp">8 hours</span></td></tr>
+            <tr><td><span class="badge-s2">S2 Medium</span></td><td style="font-size:12px">Important but not immediately urgent</td><td><span class="resp">24 hours</span></td></tr>
+            <tr><td><span class="badge-s3">S3 Low</span></td><td style="font-size:12px">Non-critical, flexible timeframe</td><td><span class="resp">48 hours</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:10px;background:#ece9ff;border-radius:10px;padding:12px 18px;font-size:12.5px;color:#3d3580">
+    💡 <strong>Not sure?</strong> Default to P3/S2 and our team will adjust. For P1 or S1 — always call immediately. Never rely on email alone for critical issues.
+  </div>
+</div>
+
+<!-- EMAIL TEMPLATE -->
+<div class="section" id="email-template">
+  <div class="section-header">
+    <div class="eyebrow">05 — Raising via Email</div>
+    <h2>Email Template</h2>
+    <p>Use this template when raising a ticket via email to help us respond faster.</p>
+  </div>
+  <div class="email-template">
+    <div class="et-header">
+      <span>📧 support@softwareone.com — Suggested Email Body</span>
+      <a href="mailto:support@softwareone.com?subject=Support%20Request%20%E2%80%94%20${encodeURIComponent(custName)}&body=Tenant%20ID%3A%20%0ASubscription%20ID%3A%20%0AResource%20ID%2FName%3A%20%0ADate%2FTime%20issue%20started%3A%20%0AUsers%20impacted%3A%20%0APriority%3A%20%5BP1%2FP2%2FP3%2FP4%5D%0AIssue%20summary%3A%20%0AError%20message%3A%20%0ATroubleshooting%20steps%20performed%3A%20" class="et-btn">Open in Mail</a>
+    </div>
+    <div class="et-body">
+      <div class="et-field"><span class="et-label">Tenant ID:</span><span class="et-val">[If multiple tenants]</span></div>
+      <div class="et-field"><span class="et-label">Subscription ID:</span><span class="et-val">[If multiple subscriptions]</span></div>
+      <div class="et-field"><span class="et-label">Resource ID / Name:</span><span class="et-val">[Resource identifier]</span></div>
+      <div class="et-field"><span class="et-label">Date/Time started:</span><span class="et-val">[When the issue began]</span></div>
+      <div class="et-field"><span class="et-label">Users impacted:</span><span class="et-val">[Number of affected users]</span></div>
+      <div class="et-field"><span class="et-label">Priority:</span><span class="et-val">[P1 / P2 / P3 / P4 — P1 needs phone call too]</span></div>
+      <div class="et-field"><span class="et-label">Issue summary:</span><span class="et-val">[Brief description]</span></div>
+      <div class="et-field"><span class="et-label">Error message:</span><span class="et-val">[Exact error if available]</span></div>
+      <div class="et-field"><span class="et-label">Troubleshooting done:</span><span class="et-val">[Steps already tried]</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTHORISED CONTACTS -->
+<div class="section" id="contacts">
+  <div class="section-header">
+    <div class="eyebrow">06 — Authorised Contacts</div>
+    <h2>Authorised Contacts</h2>
+    <p>Only these individuals are authorised to raise tickets with SoftwareONE.</p>
+  </div>
+  <input type="text" class="contacts-search" placeholder="🔍 Search contacts by name or email..." oninput="filterContacts(this.value)">
+  <div class="sla-wrap">
+    <table class="sla" id="contacts-tbl">
+      <thead><tr><th>Name</th><th>Email</th><th>Contact Type</th></tr></thead>
+      <tbody id="contacts-tbody">${contactsBody}</tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ESCALATION -->
+<div class="section" id="escalation">
+  <div class="section-header">
+    <div class="eyebrow">07 — Escalation</div>
+    <h2>Escalation Process</h2>
+    <p>Not happy with the response? Here's how to escalate.</p>
+  </div>
+  <div class="esc-steps">
+    <div class="esc-step">
+      <div class="esc-num">01</div>
+      <div class="esc-title">Raise a ticket first</div>
+      <div class="esc-body">Log the issue via portal or email so there is a formal record. Include service name, impact, and any prior ticket reference.</div>
+      <a href="https://portal.softwareone.cloud" target="_blank" class="esc-link esc-l-purple">→ Open Portal</a>
+    </div>
+    <div class="esc-step">
+      <div class="esc-num">02</div>
+      <div class="esc-title">During business hours — contact your SDM</div>
+      <div class="esc-body">Contact your Service Delivery Manager directly. They can prioritise internally and coordinate the response team.</div>
+      ${sdmEmail?`<a href="mailto:${sdmEmail}?subject=Escalation%20%E2%80%94%20Service%20Quality%20Issue&body=Hi%2C%0A%0AEscalation%20required%20for%20ticket%3A%20%5BID%5D%0A%0ADescription%3A%20%5Bissue%5D%0A" class="esc-link esc-l-green">✉ Email SDM</a>`:'<span style="font-size:12px;color:var(--muted)">Contact your SDM</span>'}
+    </div>
+    <div class="esc-step">
+      <div class="esc-num">03</div>
+      <div class="esc-title">Out of hours — escalations team</div>
+      <div class="esc-body">Email the global escalations team 24/7. Subject must include <strong>"Service Quality Issue"</strong> and your ticket reference number.</div>
+      <a href="mailto:escalation@softwareone.com?subject=Service%20Quality%20Issue%20%E2%80%94%20Ticket%3A%20%5BADD%20ID%5D&body=Customer%3A%20${encodeURIComponent(custName)}%0ATicket%20Reference%3A%20%5BAdd%20ID%5D%0ADescription%3A%20%5Bissue%5D%0A" class="esc-link esc-l-amber">✉ escalation@softwareone.com</a>
+    </div>
+  </div>
+</div>
+
+<!-- PORTAL GUIDE -->
+<div class="section" id="portal">
+  <div class="section-header">
+    <div class="eyebrow">08 — Support Portal</div>
+    <h2>Using the Services Portal</h2>
+    <p>Access <strong>portal.softwareone.cloud</strong> to manage all your tickets in one place.</p>
+  </div>
+  <div class="portal-steps">
+    <div class="portal-step">
+      <div class="ps-num">01</div>
+      <div class="ps-title">Visit the portal</div>
+      <div class="ps-desc">Go to <strong>portal.softwareone.cloud</strong>. You'll be set up automatically during onboarding.</div>
+    </div>
+    <div class="portal-step">
+      <div class="ps-num">02</div>
+      <div class="ps-title">Sign in with SSO</div>
+      <div class="ps-desc">Click <strong>Continue with Microsoft</strong> — no separate username or password needed.</div>
+    </div>
+    <div class="portal-step">
+      <div class="ps-num">03</div>
+      <div class="ps-title">Create or view tickets</div>
+      <div class="ps-desc">Click <strong>Tickets → Create</strong> and choose Incident, Request, or Billing query.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHONE NUMBERS -->
+<div class="section" id="phone-numbers">
+  <div class="section-header">
+    <div class="eyebrow">09 — Global Dial-In</div>
+    <h2>Global Phone Numbers</h2>
+    <p>Available 24/7. Use phone for P1 incidents or when you prefer to speak directly with the team.</p>
+  </div>
+  <div class="phone-table-wrap">
+    <table class="phone-tbl">
+      <thead><tr><th>Country</th><th>Phone Number</th></tr></thead>
+      <tbody>${phoneRows}</tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-strip">
+  <div>
+    <h3>Ready to get started?</h3>
+    <p>Log in to the portal to raise your first ticket or view existing activity.</p>
+  </div>
+  <div class="cta-btns">
+    <a href="https://portal.softwareone.cloud" target="_blank" class="cta-btn primary">🚀 Open Support Portal</a>
+    <a href="mailto:support@softwareone.com" class="cta-btn secondary">✉ Email Support</a>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  © ${new Date().getFullYear()} SoftwareONE AG. All rights reserved.
+  <span>|</span> Prepared for ${custName}
+  <span>|</span> ${date}
+  <span>|</span> <a href="https://docs.softwareone.cloud" style="color:rgba(255,255,255,.3);text-decoration:none">docs.softwareone.cloud</a>
+</footer>
+
+<script>
+function filterContacts(q){
+  const rows = document.querySelectorAll('#contacts-tbody tr');
+  rows.forEach(r=>{
+    const txt = r.textContent.toLowerCase();
+    r.style.display = txt.includes(q.toLowerCase())?'':'none';
+  });
+}
+
+// Highlight active nav on scroll
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.nav-link');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-80)cur=s.id;});
+  navLinks.forEach(l=>{
+    l.classList.toggle('active',l.getAttribute('href')==='#'+cur);
+  });
+});
+<\/script>
+</body>
+</html>`;
+}
+
+// ═══════════════════════════════════════
+// UPDATE PREVIEW
+// ═══════════════════════════════════════
+let updateTimer;
+function update(){
+  clearTimeout(updateTimer);
+  updateTimer = setTimeout(()=>{
+    document.getElementById('preview-frame').srcdoc = buildHTML(false);
+    // sync PS row visibility
+    document.getElementById('ps-row').style.opacity = chk('f-ps-on')?1:.4;
+  },150);
+}
+
+// ═══════════════════════════════════════
+// DOWNLOAD HTML
+// ═══════════════════════════════════════
+function downloadHTML(){
+  const html = buildHTML(true);
+  const custName = (document.getElementById('f-custname').value||'Customer').replace(/[^a-zA-Z0-9]/g,'_');
+  const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SoftwareONE_Support_Guide_${custName}.html`;
+  a.click();
+}
+
+// ═══════════════════════════════════════
+// PDF (print from preview)
+// ═══════════════════════════════════════
+function triggerPDF(){
+  const frame = document.getElementById('preview-frame');
+  frame.contentWindow.print();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+(function init(){
+  // default date today
+  const d = new Date();
+  document.getElementById('f-date').value = d.toISOString().slice(0,10);
+  renderTeam();
+  renderContacts();
+  update();
+})();
+</script>
+</body>
+</html>
